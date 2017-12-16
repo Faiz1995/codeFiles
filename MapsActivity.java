@@ -67,11 +67,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     Runnable runnable;
     public static String dis;
     public static String dur;
-
+    List<Polyline> polyLines;
     String voicenottospeak="no";
     String voicetospeak;
     List voice;
-
+String url;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -86,7 +86,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onInit(int status) {
                 tt.setLanguage(Locale.ENGLISH);
-
+        polyLines = new ArrayList<Polyline>();
 
             }
         });
@@ -102,7 +102,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 firstLocation = general;
                 firstmarker = mMap.addMarker(new MarkerOptions()
                         .position(firstLocation)
-                        .title("First Location")
+                        .title("Start Location")
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))
                 );
 
@@ -116,12 +116,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 secondLocation = general;
                 secondmarker = mMap.addMarker(new MarkerOptions()
                         .position(secondLocation)
-                        .title("Second Location")
+                        .title("Destination")
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
                 );
                 secondlocation_btn.setEnabled(false);
+                clearlocation_btn.setEnabled(false);
               //  tt.speak("Journey Started",TextToSpeech.QUEUE_FLUSH,null);
-                String url = getDirectionsUrl(firstLocation, secondLocation);
+                url = getDirectionsUrl(firstLocation, secondLocation);
 
                 DownloadTask downloadTask = new DownloadTask();
 
@@ -139,45 +140,35 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 firstmarker.remove();
                 secondmarker.remove();
                 m.remove();
-                if(mPolyline!=null)
-                mPolyline.remove();
+                m = mMap.addMarker(new MarkerOptions()
+                        .position(secondLocation)
+                        .title("Set Location"));
                 distance.setText("Distance : ");
                 duration.setText("Duration : ");
-ii=0;
+                ii=0;
+                if(polyLines!=null) {
+                    for (int i = 0; i < polyLines.size(); i++) {
+                        polyLines.get(i).remove();
+                    }
+                }
             }
         });
     }
 
-
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     @Override
 
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
-        // Add a marker in Sydney and move the camera
         final LatLng myLocation = new LatLng(24.948739, 67.106974);
-        //final  LatLng daniyalGhar = new LatLng(24.957561,67.050607);
-        // mMap.addMarker(new MarkerOptions().position(myLocation).title("Home"));
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myLocation, 14.0f));
         mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.animateCamera(CameraUpdateFactory.zoomTo(14.0f), 3000, new GoogleMap.CancelableCallback() {
             @Override
             public void onFinish() {
-                //Here you can take the snapshot or whatever you want
                 m = mMap.addMarker(new MarkerOptions()
                         .position(myLocation)
-                        .title("My Location")
-                );
-                //animateMarker(m,daniyalGhar,false);
+                        .title("Set Location"));
+
             }
 
             @Override
@@ -228,7 +219,6 @@ ii=0;
     }
 
     public class DownloadTask extends AsyncTask<String, Integer, String> {
-
 
         @Override
         protected String doInBackground(String... url) {
@@ -317,23 +307,23 @@ ii=0;
             ArrayList points = null;
             PolylineOptions lineOptions = null;
             MarkerOptions markerOptions = new MarkerOptions();
+            if(result!= null) {
+                for (int i = 0; i < result.size(); i++) {
+                     points = new ArrayList();
+                     lineOptions = new PolylineOptions();
 
-            for (int i = 0; i < result.size(); i++) {
-                points = new ArrayList();
-                lineOptions = new PolylineOptions();
+                     List<HashMap> path = result.get(i);
 
-                List<HashMap> path = result.get(i);
+                     for (int j = 0; j < path.size(); j++) {
+                          HashMap point = path.get(j);
+                          double lat = Double.parseDouble(point.get("lat").toString());
+                          double lng = Double.parseDouble(point.get("lng").toString());
+                          LatLng position = new LatLng(lat, lng);
 
-                for (int j = 0; j < path.size(); j++) {
-                    HashMap point = path.get(j);
+                          points.add(position);
+                      }
 
-                    double lat = Double.parseDouble(point.get("lat").toString());
-                    double lng = Double.parseDouble(point.get("lng").toString());
-                    LatLng position = new LatLng(lat, lng);
-
-                    points.add(position);
-                }
-
+                 }
             }
             distance.setText(distance.getText() + dis);
             duration.setText(duration.getText() + dur);
@@ -343,37 +333,29 @@ ii=0;
             if (allPoints != null && allPoints.size() > 0) {
                 animateMarker(false);
                 runnable = new Runnable() {
-                    Marker m = mMap.addMarker(new MarkerOptions().position((LatLng) allPoints.get(ii)));
-
-
-
+                    //Marker m = mMap.addMarker(new MarkerOptions().position((LatLng) allPoints.get(ii)));
                     @Override
                     public void run() {
                         marker.remove();
                         animateMarker(false);
                     }
                 };
-if(points != null && points.size() >0) {
-    drawPolylines(points, lineOptions);
-    lineOptions.addAll(points);
-    lineOptions.width(12);
-    lineOptions.color(Color.RED);
-    lineOptions.geodesic(true);
 
-}
-// Drawing polyline in the Google Map for the i-th route
-                try {
-                   // mPolyline = mMap.addPolyline(lineOptions);
-                } catch (Exception e) {
-                    //  Log.e("error", e.getMessage().toString());
-                    Toast.makeText(getApplicationContext(), e.getMessage().toString(), Toast.LENGTH_LONG).show();
+                if(points != null && points.size() >0) {
+                     drawPolylines(points, lineOptions);
                 }
-            } else
-                Toast.makeText(getApplicationContext(), "Points Not fetched, Restart Apk or Check your Internet Connection", Toast.LENGTH_LONG).show();
-        }
-public void drawPolylines(List points,PolylineOptions lineOptions){
-    int count = points.size() / 20;
 
+            } else {
+                Toast.makeText(getApplicationContext(), "Points Not fetched, Retrying.. Please Check Your Network Connection", Toast.LENGTH_SHORT).show();
+                DownloadTask downloadTask = new DownloadTask(); //RESTART DOWNLOADING
+                downloadTask.execute(url);
+            }
+        }
+
+
+public void drawPolylines(List points,PolylineOptions lineOptions){
+    int count = points.size() / 20;  // counting how much polylines should be drawn
+//each polyline should have maximum of 20 points // else it make application hanged
     int counter = 0;
     if(count ==0){
         lineOptions.addAll(points);
@@ -392,10 +374,10 @@ public void drawPolylines(List points,PolylineOptions lineOptions){
             lineOptions.width(12);
             lineOptions.color(Color.RED);
             lineOptions.geodesic(true);
-            mMap.addPolyline(lineOptions);
+          polyLines.add(mMap.addPolyline(lineOptions));
         }
-        if(points.size() % 20 != 0){
-            List chunk = new ArrayList();
+        if(points.size() % 20 != 0){  //adding remaining points if left e.g 45 points..5 points left after executing above application
+            List chunk = new ArrayList();    //so adding remaining points here in this for loop (used % for that purpose )
             for(int p = 0; p< points.size() % 20; p++){
 
                     chunk.add(points.get((counter)));
@@ -405,16 +387,14 @@ public void drawPolylines(List points,PolylineOptions lineOptions){
             lineOptions.width(12);
             lineOptions.color(Color.RED);
             lineOptions.geodesic(true);
-            mMap.addPolyline(lineOptions);
+            polyLines.add(mMap.addPolyline(lineOptions));
         }
     }
 }
+
         public void animateMarker(final boolean hideMarker) {
-
             final Handler handler = new Handler();
-            //  Log.e("in animate marker", ii + "");
-            final long duration = 500;
-
+            final long duration = 100;
             final Interpolator interpolator = new LinearInterpolator();
 
              //final BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.west);
@@ -433,16 +413,15 @@ public void drawPolylines(List points,PolylineOptions lineOptions){
                     long elapsed = SystemClock.uptimeMillis() - start;
                     float t = interpolator.getInterpolation((float) elapsed
                             / duration);
-                    //  float t = 1.0f;
                     double lng = t * toPosition.longitude + (1 - t)
                             * startLatLng.longitude;
                     double lat = t * toPosition.latitude + (1 - t)
                             * startLatLng.latitude;
                     marker.setPosition(new LatLng(lat, lng));
-
+                    mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(lat, lng)));
                     if (t < 1.0) {
                         // Post again 16ms later.
-                        // handler.postDelayed(this, 16);
+                         //handler.postDelayed(this, 16);
                     } else {
                         if (hideMarker) {
                             marker.setVisible(false);
@@ -467,46 +446,14 @@ public void drawPolylines(List points,PolylineOptions lineOptions){
                     }
                     else{
                         tt.speak("You reached your destination",TextToSpeech.QUEUE_FLUSH,null);
+                        Toast.makeText(getApplicationContext(), "You have reached your destination", Toast.LENGTH_SHORT).show();
+                        marker.remove();
+                        m.setTitle("Destination");
+                        clearlocation_btn.setEnabled(true);
                     }
                 }
 
             });
-        }
-
-
-        private String downloadUrl(String strUrl) throws IOException {
-            String data = "";
-            InputStream iStream = null;
-            HttpURLConnection urlConnection = null;
-            try {
-                URL url = new URL(strUrl);
-
-                urlConnection = (HttpURLConnection) url.openConnection();
-
-                urlConnection.connect();
-
-                iStream = urlConnection.getInputStream();
-
-                BufferedReader br = new BufferedReader(new InputStreamReader(iStream));
-
-                StringBuffer sb = new StringBuffer();
-
-                String line = "";
-                while ((line = br.readLine()) != null) {
-                    sb.append(line);
-                }
-
-                data = sb.toString();
-
-                br.close();
-
-            } catch (Exception e) {
-                Log.d("Exception", e.toString());
-            } finally {
-                iStream.close();
-                urlConnection.disconnect();
-            }
-            return data;
         }
     }
 }

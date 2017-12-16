@@ -39,7 +39,7 @@ public class DirectionsJSONParser {
     List addStartLine(double Lat, double Lng, LatLng firstLocation){
         List li = new ArrayList();
         //Log.e("In func","");
-        for(float t = 0 ; t<1; t+=0.1 ){
+        for(float t = 0 ; t<1; t+=0.2 ){
             double lat = firstLocation.latitude +(Lat-firstLocation.latitude)*t;
             double lng = firstLocation.longitude +(Lng-firstLocation.longitude)*t;
             //Log.e("Lat Lang",lat+" "+lng);
@@ -52,14 +52,13 @@ public class DirectionsJSONParser {
                 voicelist.add("no");
             }
         }
-        //Log.e("List size",li.size()+"");
+
         return  li;
     }
-    List addEndLine(double Lat, double Lng, LatLng secondLocation
-    ){
+    List addEndLine(double Lat, double Lng, LatLng secondLocation){
         List li = new ArrayList();
         // Log.e("In func","");
-        for(double t = 0 ; t<=1; t+=0.1 ){
+        for(double t = 0 ; t<=1; t+=0.2 ){
             double lat = Lat  +(secondLocation.latitude-Lat)*t;
             double lng = Lng +(secondLocation.longitude-Lng)*t;
             //Log.e("Lat Lang",lat+" "+lng);
@@ -72,7 +71,7 @@ public class DirectionsJSONParser {
         LatLng p = new LatLng(lat,lng);
         li.add(p);
         voicelist.add("You reach your destination");
-        ///Log.e("List size",li.size()+"");
+
         return  li;
     }
     /** Receives a JSONObject and returns a list of lists containing latitude and longitude */
@@ -82,8 +81,6 @@ public class DirectionsJSONParser {
         JSONArray jRoutes = null;
         JSONArray jLegs = null;
         JSONArray jSteps = null;
-
-
 
         try {
 
@@ -95,13 +92,9 @@ public class DirectionsJSONParser {
                 for (int j = 0; j < jLegs.length(); j++) {
                     MapsActivity.dur   = (String) ((JSONObject) ((JSONObject) jLegs.get(j)).get("duration")).get("text");
                     MapsActivity.dis = (String) ((JSONObject)    ((JSONObject) jLegs.get(j)).get("distance")).get("text");
-
-                    // dis = (String) ((JSONObject) ((JSONObject) jLegs.get(j)).get("distance")).get("text");
-
-
                 }
                 List path = new ArrayList<HashMap<String, String>>();
-                //Log.e("In Direcrion class", "in direction");
+
                 /** Traversing all legs */
                 for (int j = 0; j < jLegs.length(); j++) {
                     jSteps = ((JSONObject) jLegs.get(j)).getJSONArray("steps");
@@ -111,31 +104,32 @@ public class DirectionsJSONParser {
                     for (int k = 0; k < jSteps.length(); k++) {
                         String polyline = "";
                         voicetext = (String) (((JSONObject) jSteps.get(k)).get("html_instructions"));
-                        start_lat =(Double) ((JSONObject) ((JSONObject) jSteps.get(k)).get("start_location")).get("lat");
-                        start_lng = (Double) ((JSONObject) ((JSONObject) jSteps.get(k)).get("start_location")).get("lng");
-                        end_lat = (Double) ((JSONObject) ((JSONObject) jSteps.get(k)).get("end_location")).get("lat");
-                        end_lng = (Double) ((JSONObject) ((JSONObject) jSteps.get(k)).get("end_location")).get("lng");
+                        if (checkRight(voicetext))
+                            voicetext = "Turn Right";
+                        else
+                            voicetext = "Turn Left";
+//                        start_lat =(Double) ((JSONObject) ((JSONObject) jSteps.get(k)).get("start_location")).get("lat");
+//                        start_lng = (Double) ((JSONObject) ((JSONObject) jSteps.get(k)).get("start_location")).get("lng");
+//                        end_lat = (Double) ((JSONObject) ((JSONObject) jSteps.get(k)).get("end_location")).get("lat");
+//                        end_lng = (Double) ((JSONObject) ((JSONObject) jSteps.get(k)).get("end_location")).get("lng");
 
-                        //Log.e("in final loop", k + "");
                         if (k == 0) {
-                            // Log.e("k", "k is zero");
                             Double lat = (Double) ((JSONObject) ((JSONObject) jSteps.get(k)).get("start_location")).get("lat");
                             Double lng = (Double) ((JSONObject) ((JSONObject) jSteps.get(k)).get("start_location")).get("lng");
-                            // Log.e("lat lang is ", lat + lng + "");
-                           // List li = getPoints(firstLocation,new LatLng(lat,lng),voicetext);
-                            List li=addStartLine(lat,lng,firstLocation);
-                            //Log.e("list size ", li.size() + "");
+
+                            // List li = getPoints(firstLocation,new LatLng(lat,lng),voicetext);
+                            List li = addStartLine(lat, lng, firstLocation);
                             for (int z = 0; z < li.size(); z++) {
                                 HashMap<String, String> hm = new HashMap<String, String>();
                                 hm.put("lat", Double.toString(((LatLng) li.get(z)).latitude));
                                 hm.put("lng", Double.toString(((LatLng) li.get(z)).longitude));
                                 path.add(hm);
-                                voicelist.add("no");
+                                // voicelist.add("no");
                             }
                         }
                         polyline = (String) ((JSONObject) ((JSONObject) jSteps.get(k)).get("polyline")).get("points");
-                       // List list=getPoints(new LatLng(start_lat,start_lng),new LatLng(end_lat,end_lng),voicetext);
-                         List list = decodePoly(polyline);
+                        // List list=getPoints(new LatLng(start_lat,start_lng),new LatLng(end_lat,end_lng),voicetext);
+                        List list = decodePoly(polyline);
 
                         /** Traversing all points */
                         for (int l = 0; l < list.size(); l++) {
@@ -143,17 +137,17 @@ public class DirectionsJSONParser {
                             hm.put("lat", Double.toString(((LatLng) list.get(l)).latitude));
                             hm.put("lng", Double.toString(((LatLng) list.get(l)).longitude));
                             path.add(hm);
+                            voicelist.add("no");
                         }
+                        voicelist.remove(voicelist.size() - 1);
+                        voicelist.add(voicetext);
                     }
-                    {
-                        // Log.e("k", "k is zero");
+
                         Double lat = (Double) ((JSONObject) ((JSONObject) jSteps.get(jSteps.length() - 1)).get("end_location")).get("lat");
                         Double lng = (Double) ((JSONObject) ((JSONObject) jSteps.get(jSteps.length() - 1)).get("end_location")).get("lng");
-                        //Log.e("lat lang is ", lat + lng + "");
-                     Log.e("near end line","end line near");
-                       List li=addEndLine(lat,lng,secondLocation);
+                        List li=addEndLine(lat,lng,secondLocation);
+
                         // List li = getPoints(new LatLng(lat,lng), secondLocation,voicetext);
-                        //Log.e("list size ", li.size() + "");
                         for (int z = 0; z < li.size(); z++) {
                             HashMap<String, String> hm = new HashMap<String, String>();
                             hm.put("lat", Double.toString(((LatLng) li.get(z)).latitude));
@@ -165,7 +159,7 @@ public class DirectionsJSONParser {
                         routes.add(path);
                     }
                 }
-            }
+
         } catch (JSONException e) {
             e.printStackTrace();
         }catch (Exception e){
@@ -175,10 +169,6 @@ public class DirectionsJSONParser {
         return routes;
     }
 
-    /**
-     * Method to decode polyline points
-     * Courtesy : jeffreysambells.com/2010/05/27/decoding-polylines-from-google-maps-direction-api-with-java
-     * */
     public List getPoints(LatLng start,LatLng end,String voicetext){
         double v=0.0001789875;  //250m step
         List points =new ArrayList();
@@ -201,8 +191,6 @@ public class DirectionsJSONParser {
 
 
         return points;
-
-
 
     }
     public int  getmax(int lat,int lng){
