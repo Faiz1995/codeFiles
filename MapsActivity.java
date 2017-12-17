@@ -91,7 +91,6 @@ String url;
             }
         });
 
-
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -329,7 +328,8 @@ String url;
             duration.setText(duration.getText() + dur);
             allPoints = points;
             voice=DirectionsJSONParser.voicelist;
-
+            Log.e("Voice List size",voice.size()+"");
+            Log.e("Points List size",allPoints.size()+"");
             if (allPoints != null && allPoints.size() > 0) {
                 animateMarker(false);
                 runnable = new Runnable() {
@@ -442,7 +442,7 @@ public void drawPolylines(List points,PolylineOptions lineOptions){
                             tt.speak(voicetospeak,TextToSpeech.QUEUE_FLUSH,null);
                         }
                         ii++;
-                        handler.postDelayed(runnable, 500);
+                        handler.postDelayed(runnable, 50);
                     }
                     else{
                         tt.speak("You reached your destination",TextToSpeech.QUEUE_FLUSH,null);

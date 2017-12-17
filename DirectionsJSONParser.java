@@ -26,7 +26,7 @@ public class DirectionsJSONParser {
 
 
     LatLng firstLocation,secondLocation;
-
+    String voicetext;
 
     public static List voicelist;
     DirectionsJSONParser (LatLng firstLocation, LatLng secondLocation){
@@ -99,7 +99,7 @@ public class DirectionsJSONParser {
                 for (int j = 0; j < jLegs.length(); j++) {
                     jSteps = ((JSONObject) jLegs.get(j)).getJSONArray("steps");
                     Double start_lat,start_lng,end_lat,end_lng;
-                    String voicetext=null;
+                    voicetext=null;
                     /** Traversing all steps */
                     for (int k = 0; k < jSteps.length(); k++) {
                         String polyline = "";
@@ -131,16 +131,34 @@ public class DirectionsJSONParser {
                         // List list=getPoints(new LatLng(start_lat,start_lng),new LatLng(end_lat,end_lng),voicetext);
                         List list = decodePoly(polyline);
 
-                        /** Traversing all points */
-                        for (int l = 0; l < list.size(); l++) {
-                            HashMap<String, String> hm = new HashMap<String, String>();
-                            hm.put("lat", Double.toString(((LatLng) list.get(l)).latitude));
-                            hm.put("lng", Double.toString(((LatLng) list.get(l)).longitude));
-                            path.add(hm);
-                            voicelist.add("no");
+                        //traversing points that come from decodePolyLine function
+                        for(int y = 0 ; y <list.size()-1; y++) { //since the points are not in equal space..so breaking them into equal spaces
+                            List bp = getInBetweenPoints((LatLng) list.get(y), (LatLng) list.get(y + 1));
+                            if (bp != null) {
+                                for (int l = 0; l < bp.size(); l++) {
+                                    HashMap<String, String> hm = new HashMap<String, String>();
+                                    hm.put("lat", Double.toString(((LatLng) bp.get(l)).latitude));
+                                    hm.put("lng", Double.toString(((LatLng) bp.get(l)).longitude));
+                                    path.add(hm);
+                                    voicelist.add("no");
+                                }
+                                HashMap<String, String> hm = new HashMap<String, String>();
+                                hm.put("lat", Double.toString(((LatLng) bp.get(bp.size()-1)).latitude));
+                                hm.put("lng", Double.toString(((LatLng) bp.get(bp.size()-1)).longitude));
+                                path.add(hm);
+                                voicelist.add("no");
+
+                            } else {
+                                HashMap<String, String> hm = new HashMap<String, String>();
+                                hm.put("lat", Double.toString(((LatLng) list.get(y)).latitude));
+                                hm.put("lng", Double.toString(((LatLng) list.get(y)).longitude));
+                                path.add(hm);
+                                voicelist.add("no");
+                            }
                         }
-                        voicelist.remove(voicelist.size() - 1);
-                        voicelist.add(voicetext);
+
+                                voicelist.remove(voicelist.size() - 1);
+                               voicelist.add(voicetext);
                     }
 
                         Double lat = (Double) ((JSONObject) ((JSONObject) jSteps.get(jSteps.length() - 1)).get("end_location")).get("lat");
@@ -168,31 +186,46 @@ public class DirectionsJSONParser {
 
         return routes;
     }
-
-    public List getPoints(LatLng start,LatLng end,String voicetext){
-        double v=0.0001789875;  //250m step
+    public List getInBetweenPoints(LatLng point1, LatLng point2){
+        double v=0.00001789875;  //25m step
         List points =new ArrayList();
-        int lat_steps=(int)Math.abs((end.latitude-start.latitude)/v);
-        int  lng_steps=(int)Math.abs((end.longitude-start.longitude)/v);
+        int lat_steps=(int)Math.abs((point2.latitude-point1.latitude)/v);
+        int  lng_steps=(int)Math.abs((point2.longitude-point1.longitude)/v);
         int  count=getmax(lat_steps,lng_steps);
-        double lat_inc =(end.latitude-start.latitude)/count;
-        double lng_inc =(end.longitude-start.longitude)/count;
+        if(count == 0)
+            return  null;
+        double lat_inc =(point2.latitude-point1.latitude)/count;
+        double lng_inc =(point2.longitude-point1.longitude)/count;
         for(int i=0;i<count; i++){
-            points.add(new LatLng(start.latitude+lat_inc*i,start.longitude+lng_inc*i) );
-            voicelist.add("no");
+            points.add(new LatLng(point1.latitude+lat_inc*i,point1.longitude+lng_inc*i) );
         }
-        points.add(new LatLng(start.latitude+lat_inc*(count),start.longitude+lng_inc*(count)));
-        if(checkRight(voicetext))
-            voicelist.add("Turn Right");
-        else if(checkLeft(voicetext))
-        voicelist.add("Turn Left");
-        else
-        voicelist.add("no");
-
-
+        points.add(new LatLng(point1.latitude+lat_inc*(count),point1.longitude+lng_inc*(count)));
         return points;
-
     }
+
+//    public List getPoints(LatLng start,LatLng end,String voicetext){
+//        double v=0.00001789875;  //25m step
+//        List points =new ArrayList();
+//        int lat_steps=(int)Math.abs((end.latitude-start.latitude)/v);
+//        int  lng_steps=(int)Math.abs((end.longitude-start.longitude)/v);
+//        int  count=getmax(lat_steps,lng_steps);
+//        double lat_inc =(end.latitude-start.latitude)/count;
+//        double lng_inc =(end.longitude-start.longitude)/count;
+//        for(int i=0;i<count; i++){
+//            points.add(new LatLng(start.latitude+lat_inc*i,start.longitude+lng_inc*i) );
+//            voicelist.add("no");
+//        }
+//        points.add(new LatLng(start.latitude+lat_inc*(count),start.longitude+lng_inc*(count)));
+//        if(checkRight(voicetext))
+//            voicelist.add("Turn Right");
+//        else if(checkLeft(voicetext))
+//        voicelist.add("Turn Left");
+//        else
+//        voicelist.add("no");
+//
+//        return points;
+//
+//    }
     public int  getmax(int lat,int lng){
         if(lat>lng){
             return lat;
