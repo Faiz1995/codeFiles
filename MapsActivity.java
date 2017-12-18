@@ -54,7 +54,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap;
     Marker firstmarker, secondmarker, m;
-    Button firstlocation_btn, secondlocation_btn, clearlocation_btn;
+    Button firstlocation_btn, secondlocation_btn, clearlocation_btn,ReCenter,Explore;
     LatLng firstLocation, secondLocation, general;
     Polyline mPolyline;
     List allPoints;
@@ -68,9 +68,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public static String dis;
     public static String dur;
     List<Polyline> polyLines;
+    List<Polyline> polyLines_green;
     String voicenottospeak="no";
     String voicetospeak;
     List voice;
+    boolean reCenter = false;
+
 String url;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,11 +85,29 @@ String url;
         firstlocation_btn = (Button) findViewById(R.id.first_loc_btn);
         secondlocation_btn = (Button) findViewById(R.id.second_loc_btn);
         clearlocation_btn = (Button) findViewById(R.id.clear_btn);
+        ReCenter = (Button) findViewById(R.id.Recenter_btn);
+        Explore = (Button) findViewById(R.id.Explore_btn);
+        polyLines = new ArrayList<Polyline>();
+        polyLines_green=new ArrayList<Polyline>();
+
+        Explore.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                reCenter = false;
+            }
+        });
+
+        ReCenter.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                reCenter = true;
+            }
+        });
+
         tt=new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int status) {
                 tt.setLanguage(Locale.ENGLISH);
-        polyLines = new ArrayList<Polyline>();
 
             }
         });
@@ -148,6 +169,11 @@ String url;
                 if(polyLines!=null) {
                     for (int i = 0; i < polyLines.size(); i++) {
                         polyLines.get(i).remove();
+                    }
+                }
+                if(polyLines_green!=null) {
+                    for (int i = 0; i < polyLines_green.size(); i++) {
+                        polyLines_green.get(i).remove();
                     }
                 }
             }
@@ -342,7 +368,7 @@ String url;
                 };
 
                 if(points != null && points.size() >0) {
-                     drawPolylines(points, lineOptions);
+                     drawPolylines(points, lineOptions,1);
                 }
 
             } else {
@@ -353,14 +379,23 @@ String url;
         }
 
 
-public void drawPolylines(List points,PolylineOptions lineOptions){
+public void drawPolylines(List points,PolylineOptions lineOptions,int x){
     int count = points.size() / 20;  // counting how much polylines should be drawn
 //each polyline should have maximum of 20 points // else it make application hanged
     int counter = 0;
     if(count ==0){
         lineOptions.addAll(points);
         lineOptions.width(12);
-        lineOptions.color(Color.RED);
+        if (x == 1) {
+            lineOptions.color(Color.RED);
+            polyLines.add(mMap.addPolyline(lineOptions));
+        }
+        else {
+
+            lineOptions.color(Color.GREEN);
+            polyLines_green.add(mMap.addPolyline(lineOptions));
+        }
+
         lineOptions.geodesic(true);
     }
     else {
@@ -372,9 +407,18 @@ public void drawPolylines(List points,PolylineOptions lineOptions){
             }
             lineOptions.addAll(chunk);
             lineOptions.width(12);
-            lineOptions.color(Color.RED);
+
+            if (x == 1) {
+                lineOptions.color(Color.RED);
+                polyLines.add(mMap.addPolyline(lineOptions));
+            }
+            else {
+
+                lineOptions.color(Color.GREEN);
+                polyLines_green.add(mMap.addPolyline(lineOptions));
+            }
             lineOptions.geodesic(true);
-          polyLines.add(mMap.addPolyline(lineOptions));
+
         }
         if(points.size() % 20 != 0){  //adding remaining points if left e.g 45 points..5 points left after executing above application
             List chunk = new ArrayList();    //so adding remaining points here in this for loop (used % for that purpose )
@@ -385,9 +429,18 @@ public void drawPolylines(List points,PolylineOptions lineOptions){
             }
             lineOptions.addAll(chunk);
             lineOptions.width(12);
-            lineOptions.color(Color.RED);
             lineOptions.geodesic(true);
-            polyLines.add(mMap.addPolyline(lineOptions));
+            if (x == 1) {
+                lineOptions.color(Color.RED);
+                polyLines.add(mMap.addPolyline(lineOptions));
+            }
+            else {
+
+                lineOptions.color(Color.GREEN);
+                polyLines_green.add(mMap.addPolyline(lineOptions));
+            }
+
+
         }
     }
 }
@@ -418,7 +471,10 @@ public void drawPolylines(List points,PolylineOptions lineOptions){
                     double lat = t * toPosition.latitude + (1 - t)
                             * startLatLng.latitude;
                     marker.setPosition(new LatLng(lat, lng));
-                    mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(lat, lng)));
+                    if (reCenter){
+                        mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(lat, lng)));
+
+                    }
                     if (t < 1.0) {
                         // Post again 16ms later.
                          //handler.postDelayed(this, 16);
@@ -431,6 +487,7 @@ public void drawPolylines(List points,PolylineOptions lineOptions){
                         }
                     }
                     if (ii < allPoints.size() - 2) {
+                        drawGreenLine();
                         if(voicenottospeak.equals((String)voice.get(ii))){
 
                         }
@@ -454,6 +511,25 @@ public void drawPolylines(List points,PolylineOptions lineOptions){
                 }
 
             });
+        }
+        public void drawGreenLine(){
+            if(polyLines_green!=null) {
+                for (int i = 0; i < polyLines_green.size(); i++) {
+                    polyLines_green.get(i).remove();
+                }
+            }
+            PolylineOptions polylineOptions=new PolylineOptions();//help to draw line on map
+            List chunk=new ArrayList();
+            if(ii!=0) {
+                for (int i = 0; i < ii; i++) {
+                    if(allPoints.size()>0)
+                    chunk.add(allPoints.get(i));
+
+
+                }
+            }
+            drawPolylines(chunk,polylineOptions,2);
+
         }
     }
 }
