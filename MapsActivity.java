@@ -72,7 +72,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     String voicenottospeak="no";
     String voicetospeak;
     List voice;
-    boolean reCenter = false;
+    boolean reCenter = true;
 
 String url;
     @Override
@@ -184,7 +184,7 @@ String url;
 
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        final LatLng myLocation = new LatLng(24.948739, 67.106974);
+        final LatLng myLocation = new LatLng(24.945990468981336, 67.11514055728912);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myLocation, 14.0f));
         mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.animateCamera(CameraUpdateFactory.zoomTo(14.0f), 3000, new GoogleMap.CancelableCallback() {
@@ -391,7 +391,7 @@ public void drawPolylines(List points,PolylineOptions lineOptions,int x){
             polyLines.add(mMap.addPolyline(lineOptions));
         }
         else {
-
+            lineOptions.width(14);
             lineOptions.color(Color.GREEN);
             polyLines_green.add(mMap.addPolyline(lineOptions));
         }
@@ -413,7 +413,7 @@ public void drawPolylines(List points,PolylineOptions lineOptions,int x){
                 polyLines.add(mMap.addPolyline(lineOptions));
             }
             else {
-
+                lineOptions.width(14);
                 lineOptions.color(Color.GREEN);
                 polyLines_green.add(mMap.addPolyline(lineOptions));
             }
@@ -435,7 +435,7 @@ public void drawPolylines(List points,PolylineOptions lineOptions,int x){
                 polyLines.add(mMap.addPolyline(lineOptions));
             }
             else {
-
+                lineOptions.width(14);
                 lineOptions.color(Color.GREEN);
                 polyLines_green.add(mMap.addPolyline(lineOptions));
             }
@@ -447,7 +447,7 @@ public void drawPolylines(List points,PolylineOptions lineOptions,int x){
 
         public void animateMarker(final boolean hideMarker) {
             final Handler handler = new Handler();
-            final long duration = 100;
+            final long duration = 50;
             final Interpolator interpolator = new LinearInterpolator();
 
              //final BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.west);
@@ -487,7 +487,7 @@ public void drawPolylines(List points,PolylineOptions lineOptions,int x){
                         }
                     }
                     if (ii < allPoints.size() - 2) {
-                        drawGreenLine();
+                       // drawGreenLine();
                         if(voicenottospeak.equals((String)voice.get(ii))){
 
                         }
